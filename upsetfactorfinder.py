@@ -45,11 +45,11 @@ f.close()
 seeddictionary = {}
 for seeding in seedlist:
     s = seeding.split(",")
-    seeddictionary.update({s[0]:int(s[1])}) 
+    seeddictionary.update({s[11].strip('"'):int(s[4])}) 
 
 print(seeddictionary)
 
-
+tournamentname = "Get Smashed at Tin Roof"
 
 while(True):
     try:
@@ -69,12 +69,13 @@ while(True):
 
             surprisemargin = seedplacing(LowerTopXthseed) - seedplacing(HigherTopXthseed)
             if (surprisemargin > 0):
-                bracketside = input("W(inners) or L(osers):\n")
+                bracketside = int(input("W(inners) or L(osers):\n"))
+                bracketside = "🔵W" if bracketside else "🔴L"
                 setcount = input("Set count? :\n")
                 SM = "surprise margin of : {}".format(surprisemargin)
-                tweet = "{} {} {} {}, {}".format(bracketside,winner,setcount,loser,SM)
+                tweet = "{} {} {} {}, {} @ {}".format(bracketside,winner,setcount,loser,SM,tournamentname)
                 print (tweet)
-                writer = open("upsets.txt", "a")
+                writer = open("upsetsTR.txt", "a", encoding="utf-8")
                 writer.write(tweet)
                 writer.write("\n")
                 writer.close()
