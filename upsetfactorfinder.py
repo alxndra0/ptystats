@@ -42,6 +42,12 @@ def seedplacing(topx):
 def seedingtoseedplace(seed):
     seedplacing(topX(placement(seed)))
 
+def upsetfactor(winnerseed,loserseed):
+    wsp = seedingtoseedplace(winnerseed)
+    lsp = seedingtoseedplace(loserseed)
+    ufactor = wsp-lsp
+    return ufactor
+
 if __name__ == "main":
     f = open("seeding.csv")      
     seedlist = f.readlines()
