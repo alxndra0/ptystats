@@ -39,6 +39,9 @@ def seedplacing(topx):
     
     return sp
 
+def seedingtoseedplace(seed):
+    seedplacing(topX(placement(seed)))
+
 if __name__ == "main":
     f = open("seeding.csv")      
     seedlist = f.readlines()
@@ -49,6 +52,8 @@ if __name__ == "main":
         seeddictionary.update({s[11].strip('"'):int(s[4])}) 
 
     print(seeddictionary)
+
+
 
     tournamentname = "Get Smashed at Tin Roof"
 
