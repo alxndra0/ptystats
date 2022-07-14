@@ -33,8 +33,8 @@ e.g.    51 seed beats 11 seed
 
 you may wonder "why go from seeding to placing to round? why not just go seeding to round?"
         a: it's just easier that way. i've thought about ways to go from seeding to round 
-        in one step but they usually involve sneakly going to the placement first because it's a nice way
-        to normalize the seeds
+        in one step but they usually involve sneakly going to the placement first because 
+        it's a nice way to normalize the seeding
 
 
 '''
