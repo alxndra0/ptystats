@@ -23,6 +23,11 @@ def upsetFactor(winSeed, loseSeed):
 
     return upsetfactorfinder.seedplacing(LowerTopXthseed) - upsetfactorfinder.seedplacing(HigherTopXthseed)
 
+def parseScore(gqlScore, winName, losName):
+    a = gqlScore[gqlScore.find(winName) + len(winName) + 1]
+    b = gqlScore[gqlScore.find(losName) + len(losName) + 1]
+    return f'{a}-{b}'
+
 def queryEvent(id, pageNum):
     return gql.execute('''
 query TournamentQuery($page: Int!, $eventID:ID) {
@@ -106,6 +111,7 @@ while tourney_ongoing:
                     else:
                         bracketside = "Grand Finals"
                 
-                tweetText = f'{bracketside} {currSet["displayScore"]} upset factor: {upset} {hashtag}'
+                # tweetText = f'{bracketside} {currSet["displayScore"]} upset factor: {upset} {hashtag}'
+                tweetText = f'{bracketside} {winnerName} {parseScore(currSet["displayScore"], winnerName, loserName)} {loserName} upset factor: {upset} {hashtag}'
                 print(tweetText)
     tourney_ongoing = False
