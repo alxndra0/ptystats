@@ -1,5 +1,7 @@
 import os
 import sys
+from tabnanny import check
+from time import sleep
 from dotenv import load_dotenv
 import json
 from graphqlclient import GraphQLClient
@@ -24,15 +26,20 @@ def upsetFactor(winSeed, loseSeed):
     return upsetfactorfinder.seedplacing(LowerTopXthseed) - upsetfactorfinder.seedplacing(HigherTopXthseed)
 
 def parseScore(gqlScore, winName, losName):
+    if gqlScore == 'DQ':
+        return 'DQ'
     a = gqlScore[gqlScore.find(winName) + len(winName) + 1]
     b = gqlScore[gqlScore.find(losName) + len(losName) + 1]
     return f'{a}-{b}'
 
-def queryEvent(id, pageNum):
+universal_perPage = 100
+
+def queryEvent(id, pageNum, perPage):
     return gql.execute('''
-query TournamentQuery($page: Int!, $eventID:ID) {
+query TournamentQuery($page: Int!, $eventID:ID, $perPage: Int!) {
 		event(id: $eventID){
-    	sets(perPage: 1, page: $page) {
+    	sets(perPage: $perPage, page: $page, filters:{state: 3
+        }) {
       	pageInfo {
       	  total
       	  totalPages
@@ -60,7 +67,8 @@ query TournamentQuery($page: Int!, $eventID:ID) {
     ''',
     {
         "page": pageNum,
-        "eventID": event_id
+        "eventID": event_id,
+        "perPage": perPage
     })
 
 #For loop that goes through each set.
@@ -69,49 +77,54 @@ query TournamentQuery($page: Int!, $eventID:ID) {
 #   Also mark the set as checked to avoid duplicate tweets.
 
 tourney_ongoing = True
-currPage = 1
 #Set of set id's to make sure no duplicates
 checkSet = set()
 
-event = json.loads(queryEvent(event_id, currPage))
+event = json.loads(queryEvent(event_id, 1, universal_perPage))
 #total amount of sets in the event
-totalSets = event["data"]["event"]["sets"]["pageInfo"]["total"]
-
+totalPages = event["data"]["event"]["sets"]["pageInfo"]["totalPages"]
+print(f'TOTAL PAGES = {totalPages}')
 
 while tourney_ongoing:
-    for i in range(totalSets):
-        event = json.loads(queryEvent(event_id, i+1))
-        currSet = event["data"]["event"]["sets"]["nodes"][0]
-        if currSet["id"] not in checkSet:
-            checkSet.add(currSet["id"])
-            upset = 0
-            setWinnerID = currSet["winnerId"]
-            winnerSeed = 0
-            winnerName = ''
-            loserSeed = 0
-            loserName = ''
-            for slot in currSet["slots"]:
-                if slot["entrant"]["id"] == setWinnerID:
-                    winnerSeed = slot["entrant"]["initialSeedNum"]
-                    winnerName = slot["entrant"]["name"]
-                else:
-                    loserSeed = slot["entrant"]["initialSeedNum"]
-                    loserName = slot["entrant"]["name"]
-            upset = upsetFactor(winnerSeed, loserSeed)
-            if upset > 0:
-                #begin tweet format
-                bracketside = ''
-                if "Win" in currSet["fullRoundText"]:
-                    bracketside = '🔵W'
-                elif "Los" in currSet["fullRoundText"]:
-                    bracketside = '🔴L'
-                elif "Grand" in currSet["fullRoundText"]:
-                    if "Reset" in currSet["fullRoundText"]:
-                        bracketside = "Grands Reset"
+    #TODO rate limit exceeded for larger tournaments:
+    #do 10 sets per page probably
+    #or if lazy add pause
+    for page in range(totalPages):
+        event = json.loads(queryEvent(event_id, page, universal_perPage))
+        nodes = event["data"]["event"]["sets"]["nodes"]
+        for currSet in nodes:
+            if currSet["id"] not in checkSet:
+                checkSet.add(currSet["id"])
+                upset = 0
+                setWinnerID = currSet["winnerId"]
+                winnerSeed = 0
+                winnerName = ''
+                loserSeed = 0
+                loserName = ''
+                for slot in currSet["slots"]:
+                    if slot["entrant"]["id"] == setWinnerID:
+                        winnerSeed = slot["entrant"]["initialSeedNum"]
+                        winnerName = slot["entrant"]["name"]
                     else:
-                        bracketside = "Grand Finals"
-                
-                # tweetText = f'{bracketside} {currSet["displayScore"]} upset factor: {upset} {hashtag}'
-                tweetText = f'{bracketside} {winnerName} {parseScore(currSet["displayScore"], winnerName, loserName)} {loserName} upset factor: {upset} {hashtag}'
-                print(tweetText)
+                        loserSeed = slot["entrant"]["initialSeedNum"]
+                        loserName = slot["entrant"]["name"]
+                upset = upsetFactor(winnerSeed, loserSeed)
+                if upset > 0:
+                    #begin tweet format
+                    bracketside = ''
+                    if "Win" in currSet["fullRoundText"]:
+                        bracketside = '🔵W'
+                    elif "Los" in currSet["fullRoundText"]:
+                        bracketside = '🔴L'
+                    elif "Grand" in currSet["fullRoundText"]:
+                        if "Reset" in currSet["fullRoundText"]:
+                            bracketside = "Grands Reset"
+                        else:
+                            bracketside = "Grand Finals"
+                    
+                    tweetText = f'{bracketside} {winnerName} {parseScore(currSet["displayScore"], winnerName, loserName)} {loserName} upset factor: {upset} {hashtag}'
+                    #print(currSet["displayScore"])
+                    print(tweetText)
+    # print(f'checkset length is {len(checkSet)}')
+    # print(checkSet)
     tourney_ongoing = False
