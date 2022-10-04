@@ -86,7 +86,7 @@ totalPages = event["data"]["event"]["sets"]["pageInfo"]["totalPages"]
 totalSets = event["data"]["event"]["sets"]["pageInfo"]["total"]
 #####
 print(f'Total sets to check = {totalSets}')
-
+print(f'Total pages to check = {totalPages}')
 numChecks = 0
 
 scriptStartTime = time.localtime()
@@ -95,11 +95,11 @@ print(f'Auto upset script starting at {time.strftime("%H:%M:%S", scriptStartTime
 while tourney_ongoing:
     print(f'Beginning check {numChecks + 1}')
     for page in range(totalPages):
-        event = json.loads(queryEvent(event_id, page, universal_perPage))
+        print(f'PAGE {page}')
+        event = json.loads(queryEvent(event_id, page+1, universal_perPage))
         nodes = event["data"]["event"]["sets"]["nodes"]
         for currSet in nodes:
             if currSet["id"] not in checkSet:
-
                 checkSet.add(currSet["id"])
                 upset = 0
                 setWinnerID = currSet["winnerId"]

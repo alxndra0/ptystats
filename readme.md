@@ -47,5 +47,3 @@ The script will check all sets for event marked as completed and calculate any u
 Upsets with upset factor > 0 will be formatted, then written both to output and text file.
 Every 5 minutes, the script will check again.
 CTRL+C to forcibly exit. Restarting the script WILL DUPLICATE upset entries.
-
-
