@@ -1,7 +1,7 @@
+from doctest import script_from_examples
 import os
 import sys
-from tabnanny import check
-from time import sleep
+import time
 from dotenv import load_dotenv
 import json
 from graphqlclient import GraphQLClient
@@ -18,6 +18,11 @@ gql.inject_token('Bearer ' + STARTGGTOKEN)
 #Event id from start.gg for testing "779346" is red river riot 9
 event_id = sys.argv[1]
 hashtag = sys.argv[2]
+textFileName = f'{event_id}_upset_thread.txt'
+if len(sys.argv) >= 4:
+    textFileName = sys.argv[3]
+
+print(textFileName)
 
 def upsetFactor(winSeed, loseSeed):
     LowerTopXthseed = upsetfactorfinder.topX(upsetfactorfinder.placement(winSeed))
@@ -71,10 +76,6 @@ query TournamentQuery($page: Int!, $eventID:ID, $perPage: Int!) {
         "perPage": perPage
     })
 
-#For loop that goes through each set.
-# If set is completed, determine upset factor.
-#   If greater than 0, format and send tweet.
-#   Also mark the set as checked to avoid duplicate tweets.
 
 tourney_ongoing = True
 #Set of set id's to make sure no duplicates
@@ -83,17 +84,19 @@ checkSet = set()
 event = json.loads(queryEvent(event_id, 1, universal_perPage))
 #total amount of sets in the event
 totalPages = event["data"]["event"]["sets"]["pageInfo"]["totalPages"]
-print(f'TOTAL PAGES = {totalPages}')
 
+numChecks = 0
+
+scriptStartTime = time.localtime()
+print(f'Auto upset script starting at {time.strftime("%H:%M:%S", scriptStartTime)}')
 while tourney_ongoing:
-    #TODO rate limit exceeded for larger tournaments:
-    #do 10 sets per page probably
-    #or if lazy add pause
+    print(f'Beginning check {numChecks + 1}')
     for page in range(totalPages):
         event = json.loads(queryEvent(event_id, page, universal_perPage))
         nodes = event["data"]["event"]["sets"]["nodes"]
         for currSet in nodes:
             if currSet["id"] not in checkSet:
+
                 checkSet.add(currSet["id"])
                 upset = 0
                 setWinnerID = currSet["winnerId"]
@@ -110,6 +113,7 @@ while tourney_ongoing:
                         loserName = slot["entrant"]["name"]
                 upset = upsetFactor(winnerSeed, loserSeed)
                 if upset > 0:
+                    print('Upset found:')
                     #begin tweet format
                     bracketside = ''
                     if "Win" in currSet["fullRoundText"]:
@@ -123,8 +127,15 @@ while tourney_ongoing:
                             bracketside = "Grand Finals"
                     
                     tweetText = f'{bracketside} {winnerName} {parseScore(currSet["displayScore"], winnerName, loserName)} {loserName} upset factor: {upset} {hashtag}'
-                    #print(currSet["displayScore"])
-                    print(tweetText)
-    # print(f'checkset length is {len(checkSet)}')
-    # print(checkSet)
-    tourney_ongoing = False
+
+                    print(tweetText + '\n')
+
+                    #Writing upset to file
+                    twFile = open(textFileName, 'a', encoding='UTF-8')
+                    twFile.write(tweetText + '\n')
+                    twFile.close()
+    numChecks += 1
+    t = time.localtime()
+    print(f'Sleeping for 5 minutes starting at {time.strftime("%H:%M:%S", t)}. Script started at {time.strftime("%H:%M:%S", scriptStartTime)}')
+    time.sleep(300)
+tourney_ongoing = False
