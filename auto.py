@@ -1,4 +1,3 @@
-from doctest import script_from_examples
 import os
 import sys
 import time
@@ -84,11 +83,15 @@ checkSet = set()
 event = json.loads(queryEvent(event_id, 1, universal_perPage))
 #total amount of sets in the event
 totalPages = event["data"]["event"]["sets"]["pageInfo"]["totalPages"]
+totalSets = event["data"]["event"]["sets"]["pageInfo"]["total"]
+#####
+print(f'Total sets to check = {totalSets}')
 
 numChecks = 0
 
 scriptStartTime = time.localtime()
 print(f'Auto upset script starting at {time.strftime("%H:%M:%S", scriptStartTime)}')
+
 while tourney_ongoing:
     print(f'Beginning check {numChecks + 1}')
     for page in range(totalPages):
@@ -135,6 +138,12 @@ while tourney_ongoing:
                     twFile.write(tweetText + '\n')
                     twFile.close()
     numChecks += 1
+    print(f'So far checked {len(checkSet)} sets')
+    if len(checkSet) >= totalSets:
+        tourney_ongoing = False
+        t = time.localtime()
+        print(f'All sets are complete. Stopping script at {time.strftime("%H:%M:%S", t)}')
+        break
     t = time.localtime()
     print(f'Sleeping for 5 minutes starting at {time.strftime("%H:%M:%S", t)}. Script started at {time.strftime("%H:%M:%S", scriptStartTime)}')
     time.sleep(300)
