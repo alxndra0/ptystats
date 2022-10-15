@@ -4,6 +4,10 @@ Works for double elimination bracket events only
 REQUIRES START.GG API TOKEN
 for more information visit https://developer.start.gg/docs/intro/
 
+Required python packages:
+pip install python-dotenv
+pip install graphqlclient
+
 place token in ".env" file in same directory as auto.py
 the line should read:
 STARTGG_TOKEN=<your-token>

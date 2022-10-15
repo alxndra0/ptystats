@@ -38,12 +38,12 @@ def parseScore(gqlScore, winName, losName):
 
 universal_perPage = 100
 
+#TODO: MAKE FILTER AS A PARAM
 def queryEvent(id, pageNum, perPage):
     return gql.execute('''
 query TournamentQuery($page: Int!, $eventID:ID, $perPage: Int!) {
 		event(id: $eventID){
-    	sets(perPage: $perPage, page: $page, filters:{state: 3
-        }) {
+    	sets(perPage: $perPage, page: $page) {
       	pageInfo {
       	  total
       	  totalPages
@@ -95,11 +95,11 @@ print(f'Auto upset script starting at {time.strftime("%H:%M:%S", scriptStartTime
 while tourney_ongoing:
     print(f'Beginning check {numChecks + 1}')
     for page in range(totalPages):
-        print(f'PAGE {page}')
+        print(f'PAGE {page+1}')
         event = json.loads(queryEvent(event_id, page+1, universal_perPage))
         nodes = event["data"]["event"]["sets"]["nodes"]
         for currSet in nodes:
-            if currSet["id"] not in checkSet:
+            if currSet["id"] not in checkSet and currSet["state"] == 3:
                 checkSet.add(currSet["id"])
                 upset = 0
                 setWinnerID = currSet["winnerId"]
@@ -139,11 +139,11 @@ while tourney_ongoing:
                     twFile.close()
     numChecks += 1
     print(f'So far checked {len(checkSet)} sets')
-    if len(checkSet) >= totalSets:
-        tourney_ongoing = False
-        t = time.localtime()
-        print(f'All sets are complete. Stopping script at {time.strftime("%H:%M:%S", t)}')
-        break
+    # if len(checkSet) >= totalSets:
+    #     tourney_ongoing = False
+    #     t = time.localtime()
+    #     print(f'All sets are complete. Stopping script at {time.strftime("%H:%M:%S", t)}')
+    #     break
     t = time.localtime()
     print(f'Sleeping for 5 minutes starting at {time.strftime("%H:%M:%S", t)}. Script started at {time.strftime("%H:%M:%S", scriptStartTime)}')
     time.sleep(300)
